@@ -32,47 +32,59 @@ const (
 )
 
 type Request struct {
-	url      string
-	method   string
-	headers  map[string]string
-	query    map[string]string
-	ctype    ContentType
-	data     map[string]interface{}
-	raw_data string
+	url           string
+	method        string
+	headers       map[string]string
+	cookies       map[string]string
+	query         map[string]string
+	ctype         ContentType
+	data          map[string]interface{}
+	raw_data      string
+	authUsername  string
+	authPassword  string
+	isUseBaseAuth bool
 }
 
 func New(method string) *Request {
 	return &Request{
-		method:  string(method),
-		headers: make(map[string]string),
+		method:        string(method),
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		isUseBaseAuth: false,
 	}
 }
 
 func Get(url string, query map[string]string) *Request {
 	return &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  GET,
-		query:   query,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        GET,
+		query:         query,
+		isUseBaseAuth: false,
 	}
 }
 
 func Head(url string, query map[string]string) *Request {
 	return &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  HEAD,
-		query:   query,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        HEAD,
+		query:         query,
+		isUseBaseAuth: false,
 	}
 }
 
 func Post(url string, query map[string]string, ctype ContentType, data interface{}) *Request {
 	r := &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  POST,
-		query:   query,
-		ctype:   ctype,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        POST,
+		query:         query,
+		ctype:         ctype,
+		isUseBaseAuth: false,
 	}
 	r.Body(data)
 	return r
@@ -80,11 +92,13 @@ func Post(url string, query map[string]string, ctype ContentType, data interface
 
 func Put(url string, query map[string]string, ctype ContentType, data interface{}) *Request {
 	r := &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  PUT,
-		query:   query,
-		ctype:   ctype,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        PUT,
+		query:         query,
+		ctype:         ctype,
+		isUseBaseAuth: false,
 	}
 	r.Body(data)
 	return r
@@ -92,20 +106,24 @@ func Put(url string, query map[string]string, ctype ContentType, data interface{
 
 func Delete(url string, query map[string]string) *Request {
 	return &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  DELETE,
-		query:   query,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        DELETE,
+		query:         query,
+		isUseBaseAuth: false,
 	}
 }
 
 func Patch(url string, query map[string]string, ctype ContentType, data interface{}) *Request {
 	r := &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  PATCH,
-		query:   query,
-		ctype:   ctype,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        PATCH,
+		query:         query,
+		ctype:         ctype,
+		isUseBaseAuth: false,
 	}
 	r.Body(data)
 	return r
@@ -113,10 +131,12 @@ func Patch(url string, query map[string]string, ctype ContentType, data interfac
 
 func Options(url string, query map[string]string) *Request {
 	return &Request{
-		url:     url,
-		headers: make(map[string]string),
-		method:  OPTIONS,
-		query:   query,
+		url:           url,
+		headers:       make(map[string]string),
+		cookies:       make(map[string]string),
+		method:        OPTIONS,
+		query:         query,
+		isUseBaseAuth: false,
 	}
 }
 
@@ -138,6 +158,18 @@ func (r *Request) Query(params map[string]string) *Request {
 	} else {
 		r.query = params
 	}
+	return r
+}
+
+func (r *Request) Cookie(key string, value string) *Request {
+	r.cookies[key] = value
+	return r
+}
+
+func (r *Request) BaseAuth(username string, password string) *Request {
+	r.authUsername = username
+	r.authPassword = password
+	r.isUseBaseAuth = true
 	return r
 }
 
@@ -204,6 +236,14 @@ func (r *Request) Do() ([]byte, *http.Response, error) {
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
+
+	for k, v := range r.cookies {
+		req.AddCookie(&http.Cookie{Name: k, Value: v})
+	}
+
+	if r.isUseBaseAuth {
+		req.SetBasicAuth(r.authUsername, r.authPassword)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

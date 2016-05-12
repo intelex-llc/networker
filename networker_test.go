@@ -46,6 +46,37 @@ func TestQueryRequest(t *testing.T) {
 		Do()
 }
 
+func TestBaseAuth(t *testing.T) {
+	ts := startTestServer(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header["Authorization"]
+		if len(auth) == 0 {
+			t.Errorf("Expected base auth %q", r.Header["Authorization"])
+		}
+	})
+	defer ts.Close()
+
+	Get(ts.URL+"/auth", nil).BaseAuth("foo", "bar").Do()
+}
+
+func TestHeaders(t *testing.T) {
+	ts := startTestServer(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/headers":
+			if r.Header.Get("foo") != "bar" {
+				t.Errorf("Expected header foo = bar got %q", r.Header.Get("foo"))
+			}
+		case "/cookies":
+			if r.Header.Get("Cookie") != "foo=bar" {
+				t.Errorf("Expected cookie foo=bar got %q", r.Header.Get("Cookie"))
+			}
+		}
+	})
+	defer ts.Close()
+
+	Get(ts.URL+"/headers", nil).Header("foo", "bar").Do()
+	Get(ts.URL+"/cookies", nil).Cookie("foo", "bar").Do()
+}
+
 func TestPostRequest(t *testing.T) {
 	ts := startTestServer(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != POST {
