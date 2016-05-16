@@ -65,6 +65,26 @@ body, resp, err := networker.Get("https://someurl.com", nil).
 
 ```
 
+#### Set cookies
+
+```go
+
+body, resp, err := networker.Get("https://someurl.com", nil).
+                            Cookie("foo", "bar").
+                            Do()
+
+```
+
+#### Use basic auth
+
+```go
+
+body, resp, err := networker.Get("https://someurl.com", nil).
+                            BaseAuth("username", "password").
+                            Do()
+
+```
+
 ## License
 
 Networker is distributed under the
