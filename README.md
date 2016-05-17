@@ -38,7 +38,7 @@ data := Data{
     "bar",
 }
 
-body, resp, err := networker.Post("https://someurl.com", nil, JSON, data).Do()
+body, resp, err := networker.Post("https://someurl.com", nil, networker.JSON, data).Do()
 
 ```
 
